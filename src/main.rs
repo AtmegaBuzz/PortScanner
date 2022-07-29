@@ -6,16 +6,20 @@ use std::env;
 use std::str::FromStr;
 use std::process;
 
+
+static MAX_PORT:u16 = 65535; 
+static MAX_PORT_ARR: [u16;65535] = [1; 65535];
+
 struct Params{
-    port: String,
+    port: Option<u16>,
     ipArrd: IpAddr
 }
 
 impl  Params{
 
-    fn validate_port(port: &str) -> Result<&str, &'static str>{
+    fn validate_port(port: &str) -> Result<Option<u16>, &'static str>{
         if port.chars().nth(0).unwrap()=='-'{
-            return Ok("all")
+            return Ok(None)
         }
 
         for chr in port.chars(){
@@ -24,7 +28,7 @@ impl  Params{
             }
         }
 
-        return Ok(port);
+        return Ok(Some(port.parse::<u16>().unwrap()));
 
     }
 
@@ -54,7 +58,7 @@ impl  Params{
         let mut initIpAddrVal: &str = &args[idx_ip+1].clone(); 
         
         // clean port
-        let port: &str = match self::Params::validate_port(initPortVal){
+        let port: Option<u16> = match self::Params::validate_port(initPortVal){
             Ok(port_val) => port_val,
             Err(err_val) => return Err(err_val)
         };
@@ -68,22 +72,45 @@ impl  Params{
 
         Ok(
             Params{
-                port: port.to_string(),
+                port: port,
                 ipArrd: ipAddr
             }
         )
     }
 
     pub fn info(&self){
-        println!("Port: {}, IpArrdess: {}", self.port,self.ipArrd);
+        println!("Port: {}, IpArrdess: {}", self.port.unwrap(),self.ipArrd);
+    }
+
+}
+
+fn connect(port: &u16,ipAddr: &IpAddr){
+    match TcpStream::connect((ipAddr.clone(),port.clone())) {
+        Ok(_) => println!("Port {} Open",port),
+        Err(_) => println!(".")
+    }
+}
+
+fn scan(params: &Params){
+
+    // None -> All ports
+
+    if !params.port.is_none() {
+           connect(&params.port.unwrap(),&params.ipArrd);
+    }
+    else{
+        for port in MAX_PORT_ARR{
+            connect(&port,&params.ipArrd);
+        }
     }
 
 }
 
 
+
 fn main(){
     let args: Vec<_> = env::args().collect();
-    println!("{:?}",args);
+
     let parsedParam = Params::new(&args).unwrap_or_else(
         |err| {
             eprintln!("{}",err);
@@ -91,6 +118,6 @@ fn main(){
         } 
     );
 
-    parsedParam.info();
+    scan(&parsedParam);
 
 }
