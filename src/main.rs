@@ -4,6 +4,7 @@
 use std::net::{TcpStream,IpAddr};
 use std::env;
 use std::str::FromStr;
+use std::process;
 
 struct Params{
     port: String,
@@ -40,9 +41,9 @@ impl  Params{
     }
 
     pub fn new(args: &Vec<String>) -> Result<Params, &'static str>{
-        if args.len() < 2{
+        if args.len() < 3{
             return Err("less arguments passed");
-        } else if args.len() > 4 {
+        } else if args.len() > 5 {
             return Err("Too many arguments passed");
         }
 
@@ -71,14 +72,25 @@ impl  Params{
                 ipArrd: ipAddr
             }
         )
-
-        
-
     }
+
+    pub fn info(&self){
+        println!("Port: {}, IpArrdess: {}", self.port,self.ipArrd);
+    }
+
 }
 
 
 fn main(){
     let args: Vec<_> = env::args().collect();
+    println!("{:?}",args);
+    let parsedParam = Params::new(&args).unwrap_or_else(
+        |err| {
+            eprintln!("{}",err);
+            process::exit(0);
+        } 
+    );
+
+    parsedParam.info();
 
 }
