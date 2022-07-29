@@ -5,10 +5,10 @@ use std::net::{TcpStream,IpAddr};
 use std::env;
 use std::str::FromStr;
 use std::process;
+use std::thread;
+use std::io::{self, Write};
 
-
-static MAX_PORT:u16 = 65535; 
-static MAX_PORT_ARR: [u16;65535] = [1; 65535];
+const MAX_PORT:u16 = 65535; 
 
 struct Params{
     port: Option<u16>,
@@ -84,10 +84,12 @@ impl  Params{
 
 }
 
-fn connect(port: &u16,ipAddr: &IpAddr){
-    match TcpStream::connect((ipAddr.clone(),port.clone())) {
-        Ok(_) => println!("Port {} Open",port),
-        Err(_) => println!(".")
+fn connect(port: u16,ipAddr: IpAddr){
+    match TcpStream::connect((ipAddr,port)) {
+        Ok(_) =>{
+            println!("Port {} Open",port);
+        },
+        Err(_) => {}
     }
 }
 
@@ -96,11 +98,25 @@ fn scan(params: &Params){
     // None -> All ports
 
     if !params.port.is_none() {
-           connect(&params.port.unwrap(),&params.ipArrd);
+           connect(params.port.unwrap(),params.ipArrd);
     }
     else{
-        for port in MAX_PORT_ARR{
-            connect(&port,&params.ipArrd);
+        let mut curr_port: u16 = 1;
+
+        loop{
+            let port = curr_port.clone();
+            let ipAddr = params.ipArrd.clone();
+
+            thread::spawn(move || {
+                connect(port,ipAddr);
+            });
+
+            if curr_port >= MAX_PORT {
+                break;
+            }
+
+            curr_port +=1;
+
         }
     }
 
