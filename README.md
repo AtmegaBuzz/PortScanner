@@ -1,6 +1,6 @@
 # PortScanner
 Port Scanner CLI utility written in rust
-
+a free tool that displays which ports on a network are open for communication.
 
 Run for all ports
 ```
